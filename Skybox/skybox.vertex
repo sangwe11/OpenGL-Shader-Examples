@@ -1,0 +1,23 @@
+#version 330 core
+
+in vec3 vertex;
+out vec3 uvIn;
+
+layout(std140) uniform cameraUniforms
+{
+	mat4 cameraView;
+	mat4 cameraProjection;
+};
+
+layout(std140) uniform transformUniforms
+{
+	mat4 modelMat;
+};
+
+void main()
+{
+	vec4 position = cameraProjection * cameraView * modelMat * vec4(vertex, 1.0);
+	
+	gl_Position = position.xyww;
+	uvIn = vertex;
+}

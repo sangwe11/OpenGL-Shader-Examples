@@ -1,0 +1,38 @@
+#version 330 core
+
+in vec3 vertex;
+in vec3 normal;
+in vec3 tangent;
+in vec3 bitangent;
+in vec4 color;
+in vec3 uv;
+
+out vec3 worldPIn;
+out vec3 normalIn;
+out vec3 tangentIn;
+out vec3 bitangentIn;
+out vec4 colorIn;
+out vec3 uvIn;
+
+layout(std140) uniform cameraUniforms
+{
+	mat4 cameraView;
+	mat4 cameraProjection;
+};
+
+layout(std140) uniform transformUniforms
+{
+	mat4 modelMat;
+};
+
+void main()
+{
+	gl_Position = cameraProjection * cameraView * modelMat * vec4(vertex, 1.0);
+	
+	worldPIn =  (modelMat * vec4(vertex, 1.0)).xyz;
+	normalIn = normal;
+	tangentIn = tangent;
+	bitangentIn = bitangent;
+	colorIn = color;
+	uvIn = uv;
+}

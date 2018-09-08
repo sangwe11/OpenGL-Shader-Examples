@@ -1,0 +1,49 @@
+#version 330
+
+in vec4 colorOut;
+in vec2 uvOut;
+flat in int typeOut;
+
+uniform sampler2D particleTexture0;
+uniform sampler2D particleTexture1;
+uniform sampler2D particleTexture2;
+uniform sampler2D particleTexture3;
+uniform sampler2D particleTexture4;
+uniform sampler2D particleTexture5;
+uniform sampler2D particleTexture6;
+uniform sampler2D particleTexture7;
+uniform sampler2D particleTexture8;
+
+void main()
+{
+	vec4 textureColor;
+
+	// Assimp seems to invert to uv.y coordinate..
+	vec2 uv = vec2(uvOut.x, -uvOut.y);
+	
+	// Discard fragment if launcher type
+	if(typeOut == 0)
+		discard;
+
+	// Probably should change this to use sampler2DArray..
+	if(typeOut == 1)
+		textureColor = texture2D(particleTexture0, uv);
+	else if(typeOut == 2)
+		textureColor = texture2D(particleTexture1, uv);
+	else if(typeOut == 3)
+		textureColor = texture2D(particleTexture2, uv);
+	else if(typeOut == 4)
+		textureColor = texture2D(particleTexture3, uv);
+	else if(typeOut == 5)
+		textureColor = texture2D(particleTexture4, uv);
+	else if(typeOut == 6)
+		textureColor = texture2D(particleTexture5, uv);
+	else if(typeOut == 7)
+		textureColor = texture2D(particleTexture6, uv);
+	else if(typeOut == 8)
+		textureColor = texture2D(particleTexture7, uv);
+	else if(typeOut == 9)
+		textureColor = texture2D(particleTexture8, uv);
+		
+	gl_FragColor = colorOut * textureColor;
+}

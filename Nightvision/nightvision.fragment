@@ -1,0 +1,82 @@
+#version 330 core
+
+in vec2 uvIn;
+
+uniform sampler2D sceneTexture; // Scene
+uniform sampler2D overlayTexture; // Goggles overlay
+uniform sampler2D noiseTexture; // Goggles noise
+
+uniform float colorAmplification;
+uniform float elapsedTime;
+uniform vec3 visionColor;
+//uniform float warmUpTime;
+
+float blackOutTime = 0.5;
+float warmUpTime = 1.2;
+
+float warmUpScale(float time)
+{
+	float scale = 1.0 / pow(time + 0.5, 7) + 1.0;
+	return scale;
+}
+
+vec4 getMSTexture(sampler2DMS texture, vec2 uv)
+{
+	vec4 pixel;
+	
+	ivec2 coords = ivec2(textureSize(texture) * uv);
+
+	for (int i = 0; i < 8; ++i)
+	{
+		pixel += texelFetch(texture, coords, i);
+	}
+	
+	pixel /= 8.0;
+	
+	return pixel;
+}
+
+vec4 getTexture(sampler2D tex, vec2 uv)
+{
+	return texture(tex, uv);
+}
+
+void main()
+{
+	vec4 finalColor;
+	vec4 sampledPixel = getTexture(sceneTexture, uvIn);
+	vec4 overlay = getTexture(overlayTexture, uvIn);
+	float colorAmp = colorAmplification;
+	float noiseAmp = 0.1;
+	
+	// Move noise over time
+	vec2 noiseUv = uvIn;           
+    noiseUv.x += 0.4 * sin(elapsedTime * 50.0);                                 
+    noiseUv.y += 0.4 * cos(elapsedTime * 50.0);	
+	vec4 noise = getTexture(noiseTexture, noiseUv);
+	
+	// Calculate the luminance
+	float luminance = dot(sampledPixel.rgb, vec3(0.30, 0.59, 0.11));
+	
+	// Black for first few seconds
+	if(elapsedTime < blackOutTime)
+		colorAmp *= 0.0;
+	
+	// After the blackout, scale color amplification to mimic over saturation
+	if(elapsedTime > blackOutTime && elapsedTime - blackOutTime < warmUpTime)
+	{
+		float timeSinceBlackOut = elapsedTime - blackOutTime;
+		colorAmp *= warmUpScale(timeSinceBlackOut);
+		noiseAmp += 0.5 - ((timeSinceBlackOut / 2.0) / warmUpTime);
+		//colorAmp = clamp(colorAmp, 0.0, colorAmplification * 10.0);
+	}
+	
+	// Calculate final color
+	if(colorAmplification > 0.0) finalColor.rgb = ((visionColor * luminance * colorAmp) + vec3(0.0, noise.g * noiseAmp, 0.0)) * (1.0 - overlay.a);
+	else finalColor.rgb = sampledPixel.rgb *(1.0 - overlay.a);
+	
+	// Use source pixel alpha
+	finalColor.a = sampledPixel.a;
+		
+	gl_FragColor = finalColor;
+}

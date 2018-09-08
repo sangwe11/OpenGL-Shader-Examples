@@ -1,0 +1,12 @@
+#version 330 core
+
+in vec3 vertex;
+in vec2 uv;
+
+out vec2 uvIn;
+
+void main()
+{
+	uvIn = uv;
+	gl_Position = vec4(vertex, 1.0);
+}

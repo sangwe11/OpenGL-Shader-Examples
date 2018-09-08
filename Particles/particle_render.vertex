@@ -1,0 +1,21 @@
+#version 330
+
+layout (location = 0) in int Type;
+layout (location = 1) in vec3 Position;
+layout (location = 2) in vec3 Velocity;
+layout (location = 3) in float Age;
+
+layout(std140) uniform transformUniforms
+{
+	mat4 modelMat;
+};
+
+out int typeIn;
+out float ageIn;
+
+void main()
+{
+    gl_Position = modelMat * vec4(Position, 1.0);
+	typeIn = Type;
+	ageIn = Age;
+}

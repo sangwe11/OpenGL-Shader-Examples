@@ -1,0 +1,19 @@
+#version 330 core
+
+layout (location = 0) in int Type;
+layout (location = 1) in vec3 Position;
+layout (location = 2) in vec3 Velocity;
+layout (location = 3) in float Age;
+
+out int TypeIn;
+out vec3 PositionIn;
+out vec3 VelocityIn;
+out float AgeIn;
+
+void main()
+{
+    TypeIn = Type;
+    PositionIn = Position;
+    VelocityIn = Velocity;
+    AgeIn = Age;
+}

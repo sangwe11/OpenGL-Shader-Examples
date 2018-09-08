@@ -1,0 +1,62 @@
+#version 330 core
+
+in vec2 uvIn;
+
+uniform sampler2D sceneTexture;
+uniform vec2 inverseTextureSize;
+uniform float fxaaSpanMax;
+uniform float fxaaReduceMin;
+uniform float fxaaReduceMul;
+
+void main()
+{
+	vec3 finalColor;
+	
+	// Sample pixels
+	vec3 rgbTopLeft = texture(sceneTexture, uvIn + vec2(-1.0, -1.0) * inverseTextureSize).xyz;
+	vec3 rgbTopRight = texture(sceneTexture, uvIn + vec2(1.0, -1.0) * inverseTextureSize).xyz;
+	vec3 rgbBottomLeft = texture(sceneTexture, uvIn + vec2(-1.0, 1.0) * inverseTextureSize).xyz;
+	vec3 rgbBottomRight = texture(sceneTexture, uvIn + vec2(1.0, 1.0) * inverseTextureSize).xyz;
+	vec4 rgbaMiddle = texture(sceneTexture, uvIn * inverseTextureSize);
+	vec3 rgbMiddle = rgbaMiddle.xyz;
+	float opacity = rgbaMiddle.w;
+	
+	// Calculate luma for each pixel
+	vec3 luma = vec3(0.299, 0.587, 0.144);
+	float lumaMiddle = dot(rgbMiddle, luma);
+	float lumaTopLeft = dot(rgbTopLeft, luma);
+	float lumaTopRight = dot(rgbTopRight, luma);
+	float lumaBottomRight = dot(rgbBottomRight, luma);
+	float lumaBottomLeft = dot(rgbBottomLeft, luma);
+	
+	// Calculate min and max luma
+	float lumaMin = min(lumaMiddle, min(min(lumaTopLeft, lumaTopRight), min(lumaBottomLeft, lumaBottomRight)));
+	float lumaMax = max(lumaMiddle, max(max(lumaTopLeft, lumaTopRight), max(lumaBottomLeft, lumaBottomRight)));
+	
+	// Calculate edge direction
+	vec2 direction;
+	direction.x = -((lumaTopLeft + lumaTopRight) - (lumaBottomLeft + lumaBottomRight));
+	direction.y = ((lumaTopLeft + lumaBottomLeft) - (lumaTopRight + lumaBottomRight));
+	
+	// Reduce direction
+	float directionReduce = max((lumaTopLeft + lumaTopRight + lumaBottomLeft + lumaBottomRight) * (0.25 * fxaaReduceMul), fxaaReduceMin);
+	float inverseDirectionAdjustment = 1.0 / (min(abs(direction.x), abs(direction.y)) + directionReduce);
+	
+	// Clamp direction to fxaaSpanMax
+	direction = clamp(direction * inverseDirectionAdjustment, vec2(-fxaaSpanMax, -fxaaSpanMax), vec2(fxaaSpanMax, fxaaSpanMax)) * inverseTextureSize;
+	
+	// Blur results
+	vec3 rgbA = 0.5 * (texture(sceneTexture, uvIn + direction * vec2(1.0/3.0 - 0.5)).xyz + texture(sceneTexture, uvIn + direction * vec2(2.0/3.0 - 0.5)).xyz);
+	vec3 rgbB = rgbA * 0.5 + 0.25 * (texture(sceneTexture, uvIn + direction * -0.5).xyz + texture(sceneTexture, uvIn + direction * 0.5).xyz);
+	
+	// Calculate luma for result2
+	float lumaB = dot(rgbB, luma);
+	
+	// Compare lumaA / lumaB
+	if((lumaB < lumaMin) || (lumaB > lumaMax))
+		finalColor = rgbA;
+	else
+		finalColor = rgbB;
+		
+	gl_FragColor = vec4(finalColor, opacity);
+}

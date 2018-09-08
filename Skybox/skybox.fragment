@@ -1,0 +1,10 @@
+#version 330 core
+
+in vec3 uvIn;
+
+uniform samplerCube cubemapTexture;
+
+void main()
+{
+	gl_FragColor = texture(cubemapTexture, uvIn);
+}
